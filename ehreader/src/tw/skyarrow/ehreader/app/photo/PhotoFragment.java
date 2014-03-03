@@ -25,8 +25,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.analytics.tracking.android.MapBuilder;
+import com.nostra13.universalimageloader.cache.memory.impl.WeakMemoryCache;
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.assist.FailReason;
 import com.nostra13.universalimageloader.core.assist.ImageLoadingProgressListener;
 import com.nostra13.universalimageloader.core.assist.ImageScaleType;
@@ -53,6 +55,7 @@ import tw.skyarrow.ehreader.event.PhotoInfoEvent;
 import tw.skyarrow.ehreader.provider.PhotoProvider;
 import tw.skyarrow.ehreader.service.PhotoInfoService;
 import tw.skyarrow.ehreader.util.FileInfoHelper;
+import tw.skyarrow.ehreader.util.MyImageDownloader;
 import uk.co.senab.photoview.PhotoViewAttacher;
 
 /**
@@ -113,13 +116,22 @@ public class PhotoFragment extends Fragment {
         DaoSession daoSession = daoMaster.newSession();
         photoDao = daoSession.getPhotoDao();
 
-        imageLoader = ImageLoader.getInstance();
+        ImageLoaderConfiguration config = new ImageLoaderConfiguration
+                .Builder(getActivity())
+                .imageDownloader(new MyImageDownloader(getActivity()))
+                .memoryCache(new WeakMemoryCache())
+                .denyCacheImageMultipleSizesInMemory()
+                .build();
+
         displayOptions = new DisplayImageOptions.Builder()
                 .cacheOnDisc(true)
-                .imageScaleType(ImageScaleType.EXACTLY)
-                .bitmapConfig(Bitmap.Config.RGB_565)
                 .imageScaleType(ImageScaleType.IN_SAMPLE_INT)
+                .bitmapConfig(Bitmap.Config.RGB_565)
+                .resetViewBeforeLoading(true)
                 .build();
+
+        imageLoader = new MyImageLoader();
+        imageLoader.init(config);
 
         Bundle args = getArguments();
         galleryId = args.getLong(EXTRA_GALLERY);
@@ -151,6 +163,9 @@ public class PhotoFragment extends Fragment {
         if (mBitmap != null && !mBitmap.isRecycled()) {
             mBitmap.recycle();
         }
+
+        imageLoader.destroy();
+        imageLoader = null;
     }
 
     @Override
@@ -315,6 +330,11 @@ public class PhotoFragment extends Fragment {
             progressBar.setIndeterminate(false);
             progressBar.setProgress(0);
             getActivity().supportInvalidateOptionsMenu();
+
+            if(mBitmap != null && !mBitmap.isRecycled()){
+                mBitmap.recycle();
+                mBitmap = null;
+            }
         }
 
         @Override

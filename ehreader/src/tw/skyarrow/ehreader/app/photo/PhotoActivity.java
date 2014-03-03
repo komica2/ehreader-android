@@ -121,6 +121,7 @@ public class PhotoActivity extends ActionBarActivity implements View.OnSystemUiV
 
         pagerAdapter = new PhotoPagerAdapter(getSupportFragmentManager());
         pager.setAdapter(pagerAdapter);
+        pager.setOffscreenPageLimit(3);
         actionBar.setDisplayHomeAsUpEnabled(true);
 
         if (savedInstanceState != null) {
@@ -338,6 +339,13 @@ public class PhotoActivity extends ActionBarActivity implements View.OnSystemUiV
         @Override
         public int getCount() {
             return gallery.getCount();
+        }
+
+        @Override
+        public void destroyItem(View collection, int position, Object o) {
+            View view = (View)o;
+            ((ViewPager) collection).removeView(view);
+            view = null;
         }
     }
 

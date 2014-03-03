@@ -13,6 +13,7 @@ import java.io.IOException;
 
 import tw.skyarrow.ehreader.api.DataLoader;
 import tw.skyarrow.ehreader.util.DownloadHelper;
+import tw.skyarrow.ehreader.util.MyImageDownloader;
 import tw.skyarrow.ehreader.util.UpdateHelper;
 
 /**
@@ -65,6 +66,7 @@ public class BaseApplication extends Application {
 
     private void initImageLoader() {
         ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(getApplicationContext())
+                .imageDownloader(new MyImageDownloader(getApplicationContext()))
                 .build();
 
         ImageLoader.getInstance().init(config);

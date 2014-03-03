@@ -101,6 +101,7 @@ public class DataLoader {
         cookieStore.addCookie(new Cookie(IPB_MEMBER_ID, memberId, isLoggedIn));
         cookieStore.addCookie(new Cookie(IPB_PASS_HASH, passhash, isLoggedIn));
         cookieStore.addCookie(new Cookie(IPB_SESSION_ID, sessionid, isLoggedIn));
+        cookieStore.addCookie(new Cookie("uconfig", "tl_m-uh_y-hp_192.168.0.99%3A1234-tr_2-ts_l-prn_y-dm_l-ar_0-xns_0-xl_1024x2048x1x1025x2049x20x1044x2068x30x1054x2078x40x1064x2088x50x1074x2098x60x1084x2108x70x1094x2118x80x1104x2128x90x1114x2138x100x1124x2148x110x1134x2158x120x1144x2168x130x1154x2178x255x1279x2303-rc_0-rx_0-ry_0-cats_0-sa_y-oi_n-qb_n-tf_n-hk", isLoggedIn));
         httpContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
     }
 
@@ -109,7 +110,8 @@ public class DataLoader {
             super(name, value);
 
             setPath("/");
-            setDomain(loggedIn ? "exhentai.org" : "e-hentai.org");
+            //setDomain(loggedIn ? "exhentai.org" : "e-hentai.org");
+            setDomain("e-hentai.org");
         }
     }
 
