@@ -14,12 +14,12 @@ import java.util.List;
 
 import de.greenrobot.dao.query.QueryBuilder;
 import tw.skyarrow.ehreader.BaseApplication;
-import tw.skyarrow.ehreader.Constant;
 import tw.skyarrow.ehreader.R;
 import tw.skyarrow.ehreader.db.DaoMaster;
 import tw.skyarrow.ehreader.db.DaoSession;
 import tw.skyarrow.ehreader.db.Photo;
 import tw.skyarrow.ehreader.db.PhotoDao;
+import tw.skyarrow.ehreader.util.DatabaseHelper;
 
 /**
  * Created by SkyArrow on 2014/2/2.
@@ -29,7 +29,6 @@ public class PhotoBookmarkDialog extends DialogFragment {
 
     public static final String EXTRA_GALLERY = "id";
 
-    private SQLiteDatabase db;
     private List<Photo> photoList;
 
     @Override
@@ -38,8 +37,8 @@ public class PhotoBookmarkDialog extends DialogFragment {
         Bundle args = getArguments();
         long galleryId = args.getLong(EXTRA_GALLERY);
 
-        DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(getActivity(), Constant.DB_NAME, null);
-        db = helper.getReadableDatabase();
+        DatabaseHelper helper = DatabaseHelper.getInstance(getActivity());
+        SQLiteDatabase db = helper.getReadableDatabase();
         DaoMaster daoMaster = new DaoMaster(db);
         DaoSession daoSession = daoMaster.newSession();
         PhotoDao photoDao = daoSession.getPhotoDao();
@@ -73,12 +72,6 @@ public class PhotoBookmarkDialog extends DialogFragment {
         BaseApplication.getTracker().send(builder.build());
 
         return dialog.create();
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        db.close();
     }
 
     private DialogInterface.OnClickListener onItemClick = new DialogInterface.OnClickListener() {
