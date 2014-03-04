@@ -21,7 +21,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RatingBar;
@@ -45,8 +44,8 @@ import java.util.Date;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnClick;
+import butterknife.OnLongClick;
 import tw.skyarrow.ehreader.BaseApplication;
-import tw.skyarrow.ehreader.Constant;
 import tw.skyarrow.ehreader.R;
 import tw.skyarrow.ehreader.app.download.DownloadConfirmDialog;
 import tw.skyarrow.ehreader.app.download.RedownloadDialog;
@@ -60,6 +59,8 @@ import tw.skyarrow.ehreader.db.DownloadDao;
 import tw.skyarrow.ehreader.db.Gallery;
 import tw.skyarrow.ehreader.db.GalleryDao;
 import tw.skyarrow.ehreader.util.ActionBarHelper;
+import tw.skyarrow.ehreader.util.DatabaseHelper;
+import tw.skyarrow.ehreader.util.LoginHelper;
 
 /**
  * Created by SkyArrow on 2014/1/27.
@@ -102,7 +103,6 @@ public class GalleryActivity extends MainDrawerActivity {
 
     public static final String EXTRA_GALLERY = "id";
 
-    private SQLiteDatabase db;
     private GalleryDao galleryDao;
     private DownloadDao downloadDao;
 
@@ -118,8 +118,8 @@ public class GalleryActivity extends MainDrawerActivity {
         ButterKnife.inject(this);
         setDrawerIndicatorEnabled(false);
 
-        DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(this, Constant.DB_NAME, null);
-        db = helper.getWritableDatabase();
+        DatabaseHelper helper = DatabaseHelper.getInstance(this);
+        SQLiteDatabase db = helper.getWritableDatabase();
         DaoMaster daoMaster = new DaoMaster(db);
         DaoSession daoSession = daoMaster.newSession();
         galleryDao = daoSession.getGalleryDao();
@@ -156,12 +156,6 @@ public class GalleryActivity extends MainDrawerActivity {
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        db.close();
-    }
-
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.gallery, menu);
 
@@ -180,7 +174,7 @@ public class GalleryActivity extends MainDrawerActivity {
 
     private Intent getShareIntent() {
         Intent intent = new Intent(Intent.ACTION_SEND);
-        boolean isLoggedIn = BaseApplication.isLoggedIn();
+        boolean isLoggedIn = LoginHelper.getInstance(this).isLoggedIn();
 
         intent.putExtra(Intent.EXTRA_TEXT, gallery.getTitle() + " " + gallery.getUrl(isLoggedIn));
         intent.setType("text/plain");
@@ -454,7 +448,7 @@ public class GalleryActivity extends MainDrawerActivity {
 
     private void openInBrowser() {
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        boolean isLoggedIn = BaseApplication.isLoggedIn();
+        boolean isLoggedIn = LoginHelper.getInstance(this).isLoggedIn();
 
         BaseApplication.getTracker().send(MapBuilder.createEvent(
                 "UI", "button", "open in browser", null
@@ -477,6 +471,20 @@ public class GalleryActivity extends MainDrawerActivity {
 
         intent.putExtras(args);
         startActivity(intent);
+    }
 
+    @OnLongClick(R.id.read)
+    boolean onReadBtnLongClick() {
+        DialogFragment dialog = new GalleryPageDialog();
+        Bundle args = new Bundle();
+
+        args.putLong(GalleryPageDialog.EXTRA_GALLERY, gallery.getId());
+        args.putInt(GalleryPageDialog.EXTRA_DEFAULT_PAGE, gallery.getProgress());
+        args.putInt(GalleryPageDialog.EXTRA_TOTAL_PAGE, gallery.getCount());
+
+        dialog.setArguments(args);
+        dialog.show(getSupportFragmentManager(), GalleryPageDialog.TAG);
+
+        return true;
     }
 }

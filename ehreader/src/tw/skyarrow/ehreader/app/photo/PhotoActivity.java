@@ -42,13 +42,13 @@ import java.util.Date;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import tw.skyarrow.ehreader.BaseApplication;
-import tw.skyarrow.ehreader.Constant;
 import tw.skyarrow.ehreader.R;
 import tw.skyarrow.ehreader.db.DaoMaster;
 import tw.skyarrow.ehreader.db.DaoSession;
 import tw.skyarrow.ehreader.db.Gallery;
 import tw.skyarrow.ehreader.db.GalleryDao;
 import tw.skyarrow.ehreader.util.ActionBarHelper;
+import tw.skyarrow.ehreader.util.DatabaseHelper;
 
 /**
  * Created by SkyArrow on 2014/1/31.
@@ -77,7 +77,6 @@ public class PhotoActivity extends ActionBarActivity implements View.OnSystemUiV
     private static final int UI_HIDE_DELAY = 3000;
     private static final int HINT_HIDE_DELAY = 500;
 
-    private SQLiteDatabase db;
     private GalleryDao galleryDao;
     private SharedPreferences preferences;
 
@@ -99,8 +98,8 @@ public class PhotoActivity extends ActionBarActivity implements View.OnSystemUiV
         decorView = getWindow().getDecorView();
         decorView.setOnSystemUiVisibilityChangeListener(this);
 
-        DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(this, Constant.DB_NAME, null);
-        db = helper.getWritableDatabase();
+        DatabaseHelper helper = DatabaseHelper.getInstance(this);
+        SQLiteDatabase db = helper.getWritableDatabase();
         DaoMaster daoMaster = new DaoMaster(db);
         DaoSession daoSession = daoMaster.newSession();
         galleryDao = daoSession.getGalleryDao();
@@ -121,7 +120,6 @@ public class PhotoActivity extends ActionBarActivity implements View.OnSystemUiV
 
         pagerAdapter = new PhotoPagerAdapter(getSupportFragmentManager());
         pager.setAdapter(pagerAdapter);
-        pager.setOffscreenPageLimit(3);
         actionBar.setDisplayHomeAsUpEnabled(true);
 
         if (savedInstanceState != null) {
@@ -162,6 +160,8 @@ public class PhotoActivity extends ActionBarActivity implements View.OnSystemUiV
                 //
             }
         });
+
+        pager.setOffscreenPageLimit(3);
 
         String orientation = preferences.getString(getString(R.string.pref_screen_orientation),
                 getString(R.string.pref_screen_orientation_default));
@@ -339,13 +339,6 @@ public class PhotoActivity extends ActionBarActivity implements View.OnSystemUiV
         @Override
         public int getCount() {
             return gallery.getCount();
-        }
-
-        @Override
-        public void destroyItem(View collection, int position, Object o) {
-            View view = (View)o;
-            ((ViewPager) collection).removeView(view);
-            view = null;
         }
     }
 

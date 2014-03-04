@@ -39,20 +39,22 @@ import tw.skyarrow.ehreader.db.Gallery;
 import tw.skyarrow.ehreader.db.GalleryDao;
 import tw.skyarrow.ehreader.db.Photo;
 import tw.skyarrow.ehreader.db.PhotoDao;
+import tw.skyarrow.ehreader.util.DatabaseHelper;
 import tw.skyarrow.ehreader.util.HttpRequestHelper;
 import tw.skyarrow.ehreader.util.L;
+import tw.skyarrow.ehreader.util.LoginHelper;
 
 /**
  * Created by SkyArrow on 2014/2/19.
  */
 public class DataLoader {
-    private static DataLoader instance = null;
+    private static DataLoader instance;
     private Context context;
     private SQLiteDatabase db;
     private GalleryDao galleryDao;
     private PhotoDao photoDao;
     private HttpContext httpContext;
-    private boolean isLoggedIn;
+    private LoginHelper loginHelper;
 
     private static final String IPB_MEMBER_ID = "ipb_member_id";
     private static final String IPB_PASS_HASH = "ipb_pass_hash";
@@ -64,23 +66,24 @@ public class DataLoader {
     public static final Pattern pImageSrc = Pattern.compile("<img id=\"img\" src=\"(.+)/(.+?)\"");
     public static final Pattern pGalleryURL = Pattern.compile("<a href=\"http://(g\\.e-|ex)hentai\\.org/g/(\\d+)/(\\w+)/\" onmouseover");
 
-    public static DataLoader getInstance() {
-        if (instance == null) {
-            instance = new DataLoader();
-        }
-
-        return instance;
-    }
-
-    public void init(Context context) {
+    private DataLoader(Context context) {
         this.context = context;
+        loginHelper = LoginHelper.getInstance(context);
 
         setupDatabase();
         setupHttpContext();
     }
 
+    public static DataLoader getInstance(Context context) {
+        if (instance == null) {
+            instance = new DataLoader(context.getApplicationContext());
+        }
+
+        return instance;
+    }
+
     private void setupDatabase() {
-        DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(context, Constant.DB_NAME, null);
+        DatabaseHelper helper = DatabaseHelper.getInstance(context);
         db = helper.getWritableDatabase();
         DaoMaster daoMaster = new DaoMaster(db);
         DaoSession daoSession = daoMaster.newSession();
@@ -90,10 +93,10 @@ public class DataLoader {
 
     private void setupHttpContext() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        isLoggedIn = preferences.getBoolean(context.getString(R.string.pref_logged_in), false);
         String memberId = preferences.getString(context.getString(R.string.pref_login_memberid), "");
         String passhash = preferences.getString(context.getString(R.string.pref_login_passhash), "");
         String sessionid = preferences.getString(context.getString(R.string.pref_login_sessionid), "");
+        boolean isLoggedIn = isLoggedIn();
 
         httpContext = new BasicHttpContext();
         CookieStore cookieStore = new BasicCookieStore();
@@ -101,7 +104,6 @@ public class DataLoader {
         cookieStore.addCookie(new Cookie(IPB_MEMBER_ID, memberId, isLoggedIn));
         cookieStore.addCookie(new Cookie(IPB_PASS_HASH, passhash, isLoggedIn));
         cookieStore.addCookie(new Cookie(IPB_SESSION_ID, sessionid, isLoggedIn));
-        cookieStore.addCookie(new Cookie("uconfig", "tl_m-uh_y-hp_192.168.0.99%3A1234-tr_2-ts_l-prn_y-dm_l-ar_0-xns_0-xl_1024x2048x1x1025x2049x20x1044x2068x30x1054x2078x40x1064x2088x50x1074x2098x60x1084x2108x70x1094x2118x80x1104x2128x90x1114x2138x100x1124x2148x110x1134x2158x120x1144x2168x130x1154x2178x255x1279x2303-rc_0-rx_0-ry_0-cats_0-sa_y-oi_n-qb_n-tf_n-hk", isLoggedIn));
         httpContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
     }
 
@@ -110,19 +112,12 @@ public class DataLoader {
             super(name, value);
 
             setPath("/");
-            //setDomain(loggedIn ? "exhentai.org" : "e-hentai.org");
-            setDomain("e-hentai.org");
+            setDomain(loggedIn ? "exhentai.org" : "e-hentai.org");
         }
     }
 
     public boolean isLoggedIn() {
-        return isLoggedIn;
-    }
-
-    public void setLoggedIn(boolean isLoggedIn) {
-        this.isLoggedIn = isLoggedIn;
-
-        setupHttpContext();
+        return loginHelper.isLoggedIn();
     }
 
     public HttpContext getHttpContext() {
@@ -139,7 +134,7 @@ public class DataLoader {
         String responseStr = "";
 
         try {
-            String url = isLoggedIn ? Constant.API_URL_EX : Constant.API_URL;
+            String url = isLoggedIn() ? Constant.API_URL_EX : Constant.API_URL;
             HttpPost httpPost = new HttpPost(url);
 
             httpPost.setHeader("Accept", "application/json");
@@ -199,7 +194,7 @@ public class DataLoader {
 
     public List<Photo> getPhotoList(Gallery gallery, int page) throws ApiCallException {
         try {
-            String url = gallery.getUrl(page, isLoggedIn);
+            String url = gallery.getUrl(page, isLoggedIn());
 
             L.d("Get photo list: %s", url);
 
@@ -261,7 +256,7 @@ public class DataLoader {
         }
     }
 
-    private Photo getPhotoInDb(long galleryId, int page) {
+    public Photo getPhotoInDb(long galleryId, int page) {
         QueryBuilder<Photo> qb = photoDao.queryBuilder();
         qb.where(qb.and(
                 PhotoDao.Properties.GalleryId.eq(galleryId),
@@ -276,7 +271,7 @@ public class DataLoader {
         }
     }
 
-    private Photo getPhotoInDb(Gallery gallery, int page) {
+    public Photo getPhotoInDb(Gallery gallery, int page) {
         return getPhotoInDb(gallery.getId(), page);
     }
 
@@ -353,7 +348,7 @@ public class DataLoader {
         }
 
         try {
-            String url = photo.getUrl(isLoggedIn);
+            String url = photo.getUrl(isLoggedIn());
 
             L.d("Get show key: %s", url);
 
@@ -363,10 +358,12 @@ public class DataLoader {
 
             L.d("Get show key callback: %s", content);
 
-            if (content.equals("Invalid page.")) {
+            if (content.contains("This gallery is pining for the fjords")) {
+                throw new ApiCallException(ApiErrorCode.GALLERY_PINNED, url, response);
+            } else if (content.equals("Invalid page.")) {
                 list = getPhotoList(galleryId, photo.getPage() / Constant.PHOTO_PER_PAGE);
                 photo = list.get(0);
-                httpGet = new HttpGet(photo.getUrl(isLoggedIn));
+                httpGet = new HttpGet(photo.getUrl(isLoggedIn()));
                 response = getHttpResponse(httpGet);
                 content = HttpRequestHelper.readResponse(response);
 
