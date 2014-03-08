@@ -8,8 +8,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
-import android.support.v4.view.MenuItemCompat;
-import android.support.v7.widget.ShareActionProvider;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -21,6 +19,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.ShareActionProvider;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,7 +34,10 @@ import com.nostra13.universalimageloader.core.assist.ImageScaleType;
 import com.nostra13.universalimageloader.core.assist.SimpleImageLoadingListener;
 
 import java.io.File;
+<<<<<<< HEAD
 import java.util.List;
+=======
+>>>>>>> b5b660d55bea8e5a9a92e309d902d8816aa5bd77
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -43,8 +45,11 @@ import butterknife.OnClick;
 import de.greenrobot.dao.query.QueryBuilder;
 import de.greenrobot.event.EventBus;
 import tw.skyarrow.ehreader.BaseApplication;
-import tw.skyarrow.ehreader.Constant;
 import tw.skyarrow.ehreader.R;
+<<<<<<< HEAD
+=======
+import tw.skyarrow.ehreader.api.DataLoader;
+>>>>>>> b5b660d55bea8e5a9a92e309d902d8816aa5bd77
 import tw.skyarrow.ehreader.app.search.ImageSearchActivity;
 import tw.skyarrow.ehreader.db.DaoMaster;
 import tw.skyarrow.ehreader.db.DaoSession;
@@ -55,7 +60,10 @@ import tw.skyarrow.ehreader.event.PhotoInfoEvent;
 import tw.skyarrow.ehreader.provider.PhotoProvider;
 import tw.skyarrow.ehreader.service.PhotoInfoService;
 import tw.skyarrow.ehreader.util.FileInfoHelper;
+<<<<<<< HEAD
 import tw.skyarrow.ehreader.util.MyImageDownloader;
+=======
+>>>>>>> b5b660d55bea8e5a9a92e309d902d8816aa5bd77
 import uk.co.senab.photoview.PhotoViewAttacher;
 
 /**
@@ -80,7 +88,10 @@ public class PhotoFragment extends Fragment {
     public static final String EXTRA_PAGE = "page";
     public static final String EXTRA_TITLE = "title";
 
+<<<<<<< HEAD
     private SQLiteDatabase db;
+=======
+>>>>>>> b5b660d55bea8e5a9a92e309d902d8816aa5bd77
     private PhotoDao photoDao;
 
     private ImageLoader imageLoader;
@@ -183,7 +194,7 @@ public class PhotoFragment extends Fragment {
             inflater.inflate(R.menu.photo_fragment_loaded, menu);
 
             MenuItem shareItem = menu.findItem(R.id.menu_share);
-            ShareActionProvider shareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(shareItem);
+            ShareActionProvider shareActionProvider = (ShareActionProvider) shareItem.getActionProvider();
             shareActionProvider.setShareIntent(getShareIntent());
 
             boolean isDownloaded = photo.getDownloaded();
@@ -240,8 +251,12 @@ public class PhotoFragment extends Fragment {
             return;
         }
 
+<<<<<<< HEAD
         this.photo = photo;
         getActivity().supportInvalidateOptionsMenu();
+=======
+        getActivity().invalidateOptionsMenu();
+>>>>>>> b5b660d55bea8e5a9a92e309d902d8816aa5bd77
         loadImage();
     }
 
@@ -249,7 +264,7 @@ public class PhotoFragment extends Fragment {
         if (event.getId() != photo.getId()) return;
 
         photo.setDownloaded(event.isDownloaded());
-        getActivity().supportInvalidateOptionsMenu();
+        getActivity().invalidateOptionsMenu();
     }
 
     private Intent getShareIntent() {
@@ -311,7 +326,15 @@ public class PhotoFragment extends Fragment {
             }
         }
 
+<<<<<<< HEAD
         imageLoader.displayImage(photo.getSrc(), imageView, displayOptions, imageLoadingListener, imageProgressListener);
+=======
+        displayImage(photo.getSrc());
+    }
+
+    private void displayImage(String src) {
+        imageLoader.displayImage(src, imageView, displayOptions, imageLoadingListener, imageProgressListener);
+>>>>>>> b5b660d55bea8e5a9a92e309d902d8816aa5bd77
     }
 
     private void showRetryBtn() {
@@ -329,12 +352,16 @@ public class PhotoFragment extends Fragment {
 
             progressBar.setIndeterminate(false);
             progressBar.setProgress(0);
+<<<<<<< HEAD
             getActivity().supportInvalidateOptionsMenu();
 
             if(mBitmap != null && !mBitmap.isRecycled()){
                 mBitmap.recycle();
                 mBitmap = null;
             }
+=======
+            getActivity().invalidateOptionsMenu();
+>>>>>>> b5b660d55bea8e5a9a92e309d902d8816aa5bd77
         }
 
         @Override
@@ -347,7 +374,7 @@ public class PhotoFragment extends Fragment {
             mBitmap = bitmap;
             attacher.setOnViewTapListener(onPhotoTap);
 
-            getActivity().supportInvalidateOptionsMenu();
+            getActivity().invalidateOptionsMenu();
 
             BaseApplication.getTracker().send(MapBuilder.createTiming(
                     "resources", System.currentTimeMillis() - startLoadAt, "load photo", null
@@ -408,7 +435,7 @@ public class PhotoFragment extends Fragment {
             showToast(R.string.notification_bookmark_removed);
         }
 
-        getActivity().supportInvalidateOptionsMenu();
+        getActivity().invalidateOptionsMenu();
 
         BaseApplication.getTracker().send(MapBuilder.createEvent(
                 "UI", "button", "bookmark", null
